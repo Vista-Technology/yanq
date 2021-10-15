@@ -1,0 +1,6 @@
+---
+- name: Apply intended configuration and set monitoring
+  hosts: device_roles_leaf, device_roles_spine
+
+  roles:
+    - backup

@@ -1,0 +1,6 @@
+---
+- name: Reset demo environment
+  hosts: device_roles_leaf, device_roles_spine
+
+  roles:
+    - demo_reset

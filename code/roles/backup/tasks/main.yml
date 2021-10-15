@@ -1,0 +1,38 @@
+---
+- name: Create temporary output directory (if missing)
+  file:
+    path: "{{ temp_directory_config }}"
+    state: directory
+  run_once: true
+
+- name: Collect all facts from device
+  arista.eos.eos_facts:
+    gather_subset:
+      - config
+  register: facts
+
+- name: Clone the GIT repo
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ temp_directory_config }}/{{ repo_name }}"
+  run_once: true
+
+- name: Copy collected configuration in configuration/text directory
+  copy:
+    content: "{{ facts.ansible_facts.ansible_net_config }}"
+    dest: "{{ temp_directory_config }}/{{ repo_name }}/{{ inventory_hostname }}.conf"
+
+- name: Commit and Push GIT repo
+  lvrfrc87.git_acp.git_acp:
+    path: "{{ temp_directory_config }}/{{ repo_name }}"
+    branch: master
+    comment: backup
+    add: [ "." ]
+    remote: origin
+    mode: ssh
+    url: "{{ repo_url }}"
+    user: "{{  repo_user }}"
+    token: "{{  repo_token }}"
+    user_name: "{{  repo_user }}"
+    user_email: "{{ repo_email }}"
+  run_once: true

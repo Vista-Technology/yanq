@@ -1,0 +1,11 @@
+---
+- name: Test device configuration
+  hosts: device_roles_leaf, device_roles_spine
+  
+  tasks:
+    - name: run show version
+      eos_command:
+        commands: show running-config
+      register: config
+
+    - debug: msg={{config}}

@@ -1,0 +1,16 @@
+---
+
+- name: Apply basic empty configurations
+  arista.eos.eos_config:
+    src: "files/{{ inventory_hostname }}.cfg"
+    replace: config
+    match: none
+
+- name: Remove consul service
+  community.general.consul:
+    service_name: "Arista Monitoring"
+    service_id: "{{ inventory_hostname }}"
+    service_port: 8080
+    service_address: "{{ inventory_hostname }}"
+    host: "{{ consul_host }}"
+    state: absent

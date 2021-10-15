@@ -1,0 +1,7 @@
+---
+temp_directory_config: tmp
+repo_name: arista
+repo_url: ssh://git@51.75.91.174:222/andrea/arista.git
+repo_user: andrea
+repo_email: andrea.vivaldi@vistatech.it
+repo_token: demo

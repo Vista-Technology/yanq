@@ -1,0 +1,64 @@
+! device: {{ inventory_hostname }} (cEOSLab, EOS-4.25.1F-20001546.4251F (engineering build))
+!
+hostname {{ inventory_hostname }}
+!
+spanning-tree mode mstp
+!
+no aaa root
+!
+aaa authorization exec default local
+!
+username {{ management.username }} privilege 15 secret sha512 {{ management.password }}
+!
+management api http-commands
+   no shutdown
+{% for intf in interfaces %}
+!
+{% if intf.untagged_vlan.vid is defined %}
+vlan {{ intf.untagged_vlan.vid }}
+!
+interface Vlan{{ intf.untagged_vlan.vid }}
+   ip address {{ intf.ip_addresses[0].address }}
+   exit
+!
+interface {{ intf.name }}
+   switchport
+   switchport mode access 
+   switchport access vlan {{ intf.untagged_vlan.vid }}
+   exit
+{% else %}
+interface {{ intf.name }}
+   no switchport
+   ip address {{ intf.ip_addresses[0].address }}
+   exit
+{% endif %}
+{% endfor %}
+
+{% if bgp is defined %}
+!
+ip routing
+!
+route-map RMAP-CONNECTED-BGP permit 1000
+!
+interface Loopback0
+   description ROUTER-ID
+   ip address {{ routerid }}
+!
+router bgp {{ bgp.asn }}
+{% set rid = routerid.split('/') %}
+   router-id {{ rid[0] }}
+{% for neighbor in bgp.neighbours %}
+{% set peer_ip = neighbor.ipv4 | ipaddr('address')  %}
+   neighbor {{ peer_ip }} remote-as {{ neighbor.remote_asn }}
+   neighbor {{ peer_ip }} send-community
+   neighbor {{ peer_ip }} maximum-routes 12000
+{% endfor %}
+   redistribute connected route-map RMAP-CONNECTED-BGP
+   maximum-paths 2
+!
+{% endif %}
+!
+logging host {{ logging_remote_host }} {{ logging_remote_port }} protocol tcp
+logging format hostname fqdn
+!
+end

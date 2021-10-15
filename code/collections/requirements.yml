@@ -1,0 +1,6 @@
+---
+collections:
+- networktocode.nautobot
+- arista.eos
+- lvrfrc87.git_acp
+- community.general

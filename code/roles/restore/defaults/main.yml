@@ -1,0 +1,4 @@
+---
+temp_directory_config: tmp
+repo_name: arista
+repo_url: http://51.75.91.174:3500/andrea/arista.git

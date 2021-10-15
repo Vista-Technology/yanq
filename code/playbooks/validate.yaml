@@ -1,0 +1,9 @@
+---
+- name: Validate configurations
+  hosts: device_roles_leaf, device_roles_spine
+  connection: local
+  gather_facts: false
+
+  roles:
+    - batfish.base
+    - validate
