@@ -417,7 +417,31 @@ Spine-1                    : ok=10   changed=7    unreachable=0    failed=0    s
 
 ```
 
+You can re-use an example PostgreSQL dump, inside the _nautobot_export_ folder, to have your Nautobot instance populated.
+
 ## Post actions
 
 Create a git repository on Gitea and push the code that is contained insed the _code_ folder.
+
+Create also another empty git repository, called Arista, that will contain the backup of the devices configurations.
+
+Access AWX dashboard and create the following:
+ * New **Project** associated with the brand new repo you've just pushed
+ * An **Inventory** with Git source taken from the same project, specifically the _inventory.yaml_ inside the root of the folder
+ * A **Job Template** for each playbook  
+ * A **Workflow Template** collecting all the Job Template you have created
+
+You can now launch the Workflow Template and let the magic happens!
+
+![](./images/ss10.png)
+
+![](./images/ss06.png)
+
+![](./images/ss08.png)
+
+![](./images/ss12.png)
+
+![](./images/ss11.png)
+
+
 
