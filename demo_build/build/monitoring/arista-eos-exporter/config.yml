@@ -1,0 +1,8 @@
+listen_port: 9201
+username: 'arista'
+password: 'arista'
+protocol: 'https'
+loglevel: INFO
+timeout: 20
+job: 'arista2'
+disable_certificate_validation: true

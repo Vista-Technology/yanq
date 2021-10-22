@@ -19,28 +19,75 @@ We also added to Host nodes, one per Leaf, useful to test network connectivity i
 
 ### Nautobot
 
+Nautobot is an open source IPAM/DCIM developed by NetworkToCode team, and it's very flexible and customizable. We will use it as our Source of Truth (SOT).
+
+In fact we will store any sort of information in it.
+
+![](./images/ss14.png)
+
+![](./images/ss15.png)
+
+![](./images/ss16.png)
+
+![](./images/ss17.png)
+
+![](./images/ss18.png)
+
 ### Gitea
+We use Gitea as a simple Git server to maintain and version the Ansible project that contains all the automations playbook and correlated stuff.
 
 ### Ansible+AWX
-We make use of 3 simple, demostrative, [Ansible](https://www.ansible.com/) playbooks to perform all the **automation** staff.
+AWX will be our central point of automation, based on Ansible.
+We will use AWX to have a single UI dashboard in which perform all automation jobs and workflow.
 
-> Note: Even the creating process of all the demo environment is built with Ansible
+![](./images/ss01.png)
 
-Ansible automation is launched by the Gitlan pipeline. We have devided all the stuff in 3 topics:
+Ansible automations are launched by the AWX template jobs. We have devided all the stuff in 6 topics, corresponding to 6 Jobs Template in AWX:
+* Automatically **query** all devices
+  * _playbooks/test.yaml_
+* Automatically **backup** all devices configurations inside a GIT repo
+  * _playbooks/backup.yaml_
 * Automatically launch **validation** processes
   * _playbooks/validate.yaml_
 * Auotmatically deploy **configurations** on devices, and configure the monitoring stack
   * _playbooks/intended.yaml_
 * Automatically **test** the final environment
   * _playbooks/ping.yaml_
+* Automatically **rollback** to the previous saved configurations, in case of test failures
+  * _playbooks/rollback.yaml_
 
-Inside the _automation_ folder of this project you can find all files related to Ansible automation, regarding the NetOps process.
+![](./images/ss02.png)
+
+All the workflow can be assembled as follows:
+
+![](./images/ss03.png)
+
+Inside the _code_ folder of this project you can find all files related to Ansible automation, regarding the NetOps process.
 We use some collections and roles to perform the tasks (as you can see in the _requirements.yaml_ file):
 * Collections:
   * lvrfrc87.git_acp
   * arista.eos
+  * networktocode.nautobot
 * Roles:
   * batfish.base
+
+The networktocode.nautobot collection is used to get tha Ansible Inventory directly from Nautobot Source Of Truth.
+
+```yaml
+plugin: networktocode.nautobot.inventory
+api_endpoint: http:/<insert your ip here>:8080
+token: 0123456789abcdef0123456789abcdef01234567
+validate_certs: False
+config_context: True
+interfaces: yes
+flatten_config_context: yes
+group_by:
+  - device_roles
+```
+
+![](./images/ss04.png)
+
+![](./images/ss05.png)
 
 The arista.eos collection is the key to perform configuration deployment on the devices
 
@@ -52,7 +99,116 @@ The arista.eos collection is the key to perform configuration deployment on the 
     replace: config
     match: none
 ```
-We use a jinja2 template, filled with IaC variables, to get the final configuration
+We use a jinja2 template, filled with information provided by the Nautobot inventory plugin, to get the final configuration.
+
+```python
+!
+hostname {{ inventory_hostname }}
+!
+spanning-tree mode mstp
+!
+no aaa root
+!
+aaa authorization exec default local
+!
+username {{ management.username }} privilege 15 secret sha512 {{ management.password }}
+!
+ip access-list def2
+   9 permit tcp any any eq 8080
+   10 permit icmp any any
+   20 permit ip any any tracked
+   30 permit udp any any eq bfd ttl eq 255
+   40 permit udp any any eq bfd-echo ttl eq 254
+   50 permit udp any any eq multihop-bfd
+   60 permit udp any any eq micro-bfd
+   70 permit ospf any any
+   80 permit tcp any any eq ssh telnet www snmp bgp https msdp ldp netconf-ssh gnmi
+   90 permit udp any any eq bootps bootpc snmp rip ntp ldp
+   100 permit tcp any any eq mlag ttl eq 255
+   110 permit udp any any eq mlag ttl eq 255
+   120 permit vrrp any any
+   130 permit ahp any any
+   140 permit pim any any
+   150 permit igmp any any
+   160 permit tcp any any range 5900 5910
+   170 permit tcp any any range 50000 50100
+   180 permit udp any any range 51000 51100
+   190 permit tcp any any eq 3333
+   200 permit tcp any any eq nat ttl eq 255
+   210 permit tcp any eq bgp any
+   220 permit rsvp any any
+   exit
+!
+management api http-commands
+   no shutdown
+   exit
+{% for intf in interfaces %}
+!
+{% if intf.untagged_vlan.vid is defined %}
+vlan {{ intf.untagged_vlan.vid }}
+!
+interface Vlan{{ intf.untagged_vlan.vid }}
+   ip address {{ intf.ip_addresses[0].address }}
+   exit
+!
+interface {{ intf.name }}
+   switchport
+   switchport mode access 
+   switchport access vlan {{ intf.untagged_vlan.vid }}
+   exit
+{% else %}
+interface {{ intf.name }}
+   no switchport
+   ip address {{ intf.ip_addresses[0].address }}
+   exit
+{% endif %}
+{% endfor %}
+
+{% if bgp is defined %}
+!
+ip routing
+!
+route-map RMAP-CONNECTED-BGP permit 1000
+!
+interface Loopback0
+   description ROUTER-ID
+   ip address {{ routerid }}
+   exit
+!
+router bgp {{ bgp.asn }}
+{% set rid = routerid.split('/') %}
+   router-id {{ rid[0] }}
+{% for neighbor in bgp.neighbours %}
+{% set peer_ip = neighbor.ipv4 | ipaddr('address')  %}
+   neighbor {{ peer_ip }} remote-as {{ neighbor.remote_asn }}
+   neighbor {{ peer_ip }} send-community
+   neighbor {{ peer_ip }} maximum-routes 12000
+{% endfor %}
+   redistribute connected route-map RMAP-CONNECTED-BGP
+   maximum-paths 2
+   exit
+!
+{% endif %}
+!
+system control-plane
+   ip access-group def2 in
+   exit
+!
+daemon TerminAttr
+   exec /usr/bin/TerminAttr -disableaaa
+   no shutdown
+   exit
+!
+daemon ocprometheus
+   exec /mnt/flash/ocprometheus -config /mnt/flash/ocprometheus.yml -addr localhost:6042
+   no shutdown
+   exit
+!
+logging host {{ logging_remote_host }} {{ logging_remote_port }} protocol tcp
+logging format hostname fqdn
+!
+end
+```
 
 ### Batfish
 [Batfish](https://www.batfish.org/) is an open source **network configuration analysis** tool.
@@ -68,7 +224,7 @@ For example, we want to validate BGP neighbourship
 
 - name: Setup connection to Batfish service
   bf_session:
-    host: localhost
+    host: xx.xx.xx.xx
     name: local_batfish
   delegate_to: localhost
   run_once: true
@@ -140,7 +296,7 @@ Finally, as a complete Monitoring/Telemetry/Log aggregation stack we have chosen
 * [Grafana](https://grafana.com/oss/grafana/)
   * provides visualization dashboards
 
-## How to reproduce the demo environment
+# How to reproduce the demo environment
 
  There are some requirements to reproduce this demo enviroment:
 * python3
@@ -150,7 +306,7 @@ Finally, as a complete Monitoring/Telemetry/Log aggregation stack we have chosen
 * Docker Compose
 * Ansible
 
-### AWX
+## AWX
 
 First of all, we need to clone AWX 17.1.0 and move to `installer\`
 
@@ -183,8 +339,85 @@ At this point, everything is up and running!
 
 > You can access AWX by the IP address of your host. By default, the Web service will be exposed at port 80.
 
-### everything else
+## Rest of the Stack
 
-All the other components of the stack like Grafana, Prometheus, Gitea, Batfish, Nautobot, and the exporters will be deployed in a single docker-compose.yml
+First clone this repository on your server and chanage directory inside the root.
 
+Then create the virtualenv and install all the python requirements (this action could takes long to finish)
+
+```console
+foo@bar:~$ cd yanq
+foo@bar:~$ virtualenv .venv
+foo@bar:~$ source .venv/bin/activate
+(.venv)foo@bar:~$ cd demo_build
+(.venv)foo@bar:~$ pip install -r requirements.txt
+```
+
+Download from Arista portal the latest cEOS images and put it inside the topology folder, with the name _cEOS-Lab.tar.xz_
+
+```console
+(.venv)foo@bar:~$ ls -al topology
+
+total 391776
+drwxrwxr-x 4 ubuntu ubuntu      4096 May  7 15:17 .
+drwxrwxr-x 8 ubuntu ubuntu      4096 May  7 14:28 ..
+drwxrwxr-x 2 ubuntu ubuntu      4096 May  7 15:15 alpine-host
+-rw-r--r-- 1 ubuntu ubuntu 401152996 May  7 15:13 cEOS-Lab.tar.xz
+drwxrwxr-x 2 ubuntu ubuntu      4096 May  7 15:17 configs
+-rw-rw-r-- 1 ubuntu ubuntu       638 May  7 14:28 topology.yaml
+```
+
+Now within the virtual environment you can launch Ansible automation that builds all the infrastructure (it will takes approximately 4 minutes)
+
+```console
+(.venv)foo@bar:~$ ansible-playbook build.yml
+
+
+PLAY [lab] *************************************************************************************************************************************************************************
+
+TASK [build : Generate SSH key pair for Hosts in topology] *************************************************************************************************************************
+changed: [Spine-1]
+
+TASK [build : Build Host docker image] *********************************************************************************************************************************************
+changed: [Spine-1]
+
+TASK [build : Import & Build cEOS image] *******************************************************************************************************************************************
+changed: [Spine-1]
+
+TASK [build : Generate Arista configuration from templates] ************************************************************************************************************************
+changed: [Spine-1]
+changed: [Leaf-1]
+changed: [Leaf-2]
+
+TASK [build : Start Arista topology] ***********************************************************************************************************************************************
+changed: [Spine-1]
+
+TASK [build : Pause for 30 seconds to topology creation] ***************************************************************************************************************************
+Pausing for 30 seconds
+(ctrl+C then 'C' = continue early, ctrl+C then 'A' = abort)
+ok: [Spine-1]
+
+TASK [build : Copy OCPrometheus binary and configuration] **************************************************************************************************************************
+changed: [Spine-1]
+changed: [Leaf-1]
+changed: [Leaf-2]
+
+TASK [build : Pause for 90 seconds to topology up & running] ***********************************************************************************************************************
+Pausing for 90 seconds
+(ctrl+C then 'C' = continue early, ctrl+C then 'A' = abort)
+ok: [Spine-1]
+
+TASK [build : Start all stack architecture] ****************************************************************************************************************************************
+changed: [Spine-1]
+
+PLAY RECAP *************************************************************************************************************************************************************************
+Leaf-1                     : ok=2    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+Leaf-2                     : ok=2    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+Spine-1                    : ok=10   changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+```
+
+## Post actions
+
+Create a git repository on Gitea and push the code that is contained insed the _code_ folder.
 

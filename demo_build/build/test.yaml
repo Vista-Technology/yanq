@@ -1,0 +1,9 @@
+plugin: networktocode.nautobot.inventory
+api_endpoint: http://51.75.91.174:8080
+token: 59fbf35531116071d125581715d091493488487d
+validate_certs: False
+config_context: True
+interfaces: yes
+flatten_config_context: yes
+group_by:
+  - device_roles

@@ -1,0 +1,7 @@
+listen_port: 9200
+username: 'arista'
+password: 'arista'
+protocol: 'https'
+timeout: 20
+job: 'arista'
+exclude: []

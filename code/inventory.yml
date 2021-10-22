@@ -1,6 +1,6 @@
 plugin: networktocode.nautobot.inventory
-api_endpoint: http://51.75.91.174:8080
-token: 59fbf35531116071d125581715d091493488487d
+api_endpoint: http:/<insert your ip here>:8080
+token: 0123456789abcdef0123456789abcdef01234567
 validate_certs: False
 config_context: True
 interfaces: yes
