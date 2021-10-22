@@ -431,7 +431,12 @@ Access AWX dashboard and create the following:
  * A **Job Template** for each playbook  
  * A **Workflow Template** collecting all the Job Template you have created
 
-You can now launch the Workflow Template and let the magic happens!
+ Inside AWX, as requirements, you have also to create some credentials:
+  * Ansible Galaxy credential
+  * Git user
+  * SSH key for accessing the Hosts (use the content of _demo.key_ file, created by the build procedure inside _demo_build/topology/alpine-host_ folder, to load the private key)
+
+You can now launch the Workflow Template and let the magic happen!
 
 ![](./images/ss10.png)
 
