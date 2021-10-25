@@ -1,7 +1,7 @@
 # YANQ: Yet Another NetOps Quickstart - Talk IDI (Incontro DevOps Italia) 2021
 ![](./images/cover.png)
 
-This repository contains slides and demo code presented during the [IDI 2021](https://2021.incontrodevops.it/) event hosted by [Grusp](https://www.grusp.org/): https://2021.incontrodevops.it/talks_speakers/#talk1 (sorry foreign fellows... it's and italian talk)
+This repository contains slides and demo code presented during the [IDI 2021](https://2021.incontrodevops.it/) event hosted by [Grusp](https://www.grusp.org/): https://2021.incontrodevops.it/talks_speakers/#talk1 (sorry foreign fellows... it's an italian talk)
 
 # Slides content
 You can find an english translation of the slides [here](./slides/)
@@ -13,7 +13,7 @@ You can find an english translation of the slides [here](./slides/)
 
 ### Arista cEOS Topology
 
-We are testing our environment with a simple 3-nodes Spine/Leaf topology. We have chosen rely on [Arista](https://www.arista.com/en/) technology beacuse of the flexibility and semplicity they provide. In fact we are using containerized EOS images in conjunctions with [Docker-topo NG](https://github.com/Vista-Technology/docker-topo-ng), a software that allows you to replicate a network topology using docker technologies.
+We are testing our environment with a simple 3-nodes Spine/Leaf topology. We have chosen to rely on [Arista](https://www.arista.com/en/) technology because of the flexibility and simplicity they provide. In fact, we are using containerized EOS images in conjunctions with [Docker-topo NG](https://github.com/Vista-Technology/docker-topo-ng), a software that allows you to replicate a network topology using docker technologies.
 
 We also added to Host nodes, one per Leaf, useful to test network connectivity if everything is ok.
 
@@ -21,7 +21,7 @@ We also added to Host nodes, one per Leaf, useful to test network connectivity i
 
 Nautobot is an open source IPAM/DCIM developed by NetworkToCode team, and it's very flexible and customizable. We will use it as our Source of Truth (SOT).
 
-In fact we will store any sort of information in it.
+In fact, we will store any sort of information in it.
 
 ![](./images/ss14.png)
 
@@ -34,7 +34,7 @@ In fact we will store any sort of information in it.
 ![](./images/ss18.png)
 
 ### Gitea
-We use Gitea as a simple Git server to maintain and version the Ansible project that contains all the automations playbook and correlated stuff.
+We use Gitea as a simple Git server to maintain and version the Ansible project that contains all the automation playbooks and correlated stuff.
 
 ### Ansible+AWX
 AWX will be our central point of automation, based on Ansible.
@@ -42,18 +42,18 @@ We will use AWX to have a single UI dashboard in which perform all automation jo
 
 ![](./images/ss01.png)
 
-Ansible automations are launched by the AWX template jobs. We have devided all the stuff in 6 topics, corresponding to 6 Jobs Template in AWX:
+Ansible automation is launched by the AWX template jobs. We have divided all the stuff into 6 topics, corresponding to 6 Job Templates in AWX:
 * Automatically **query** all devices
   * _playbooks/test.yaml_
 * Automatically **backup** all devices configurations inside a GIT repo
   * _playbooks/backup.yaml_
 * Automatically launch **validation** processes
   * _playbooks/validate.yaml_
-* Auotmatically deploy **configurations** on devices, and configure the monitoring stack
+* Automatically deploy **configurations** on devices, and configure the monitoring stack
   * _playbooks/intended.yaml_
 * Automatically **test** the final environment
   * _playbooks/ping.yaml_
-* Automatically **rollback** to the previous saved configurations, in case of test failures
+* Automatically **rollback** to the previously saved configurations, in case of test failures
   * _playbooks/rollback.yaml_
 
 ![](./images/ss02.png)
@@ -62,7 +62,7 @@ All the workflow can be assembled as follows:
 
 ![](./images/ss03.png)
 
-Inside the _code_ folder of this project you can find all files related to Ansible automation, regarding the NetOps process.
+Inside the _code_ folder of this project, you can find all files related to Ansible automation, regarding the NetOps process.
 We use some collections and roles to perform the tasks (as you can see in the _requirements.yaml_ file):
 * Collections:
   * lvrfrc87.git_acp
@@ -71,7 +71,7 @@ We use some collections and roles to perform the tasks (as you can see in the _r
 * Roles:
   * batfish.base
 
-The networktocode.nautobot collection is used to get tha Ansible Inventory directly from Nautobot Source Of Truth.
+The networktocode.nautobot collection is used to get the Ansible Inventory directly from Nautobot Source Of Truth.
 
 ```yaml
 plugin: networktocode.nautobot.inventory
@@ -89,7 +89,7 @@ group_by:
 
 ![](./images/ss05.png)
 
-The arista.eos collection is the key to perform configuration deployment on the devices
+The arista.eos collection is the key to performing configuration deployment on the devices
 
 ```yaml
 ---
@@ -213,7 +213,7 @@ end
 ### Batfish
 [Batfish](https://www.batfish.org/) is an open source **network configuration analysis** tool.
 
-We have deployed a Batfish server inside our stack and we run some simple demostrative **validation** against it. As described before, we run this validations using Ansible automation.
+We have deployed a Batfish server inside our stack and we run some simple demonstrative **validation** against it. As described before, we run these validations using Ansible automation.
 
 For example, we want to validate BGP neighbourship
 ```yaml
@@ -270,7 +270,7 @@ For example, we want to validate BGP neighbourship
 ### Consul
 We have introduced [Consul]() simply to simulate a **service discovery** component inside our **automation** stack.
 
-This kind of objects are very usefull when we have to deal with automation tasks. In this way, within the _intended.yaml_ playbook, we can *register* a device to be monitored by the monitoring tools without specify any further configuration inside Prometheus
+These kind of objects are very useful when we have to deal with automation tasks. In this way, within the _intended.yaml_ playbook, we can *register* a device to be monitored by the monitoring tools without specifying any further configuration inside Prometheus
 
 ```yaml
 ---
@@ -285,7 +285,7 @@ This kind of objects are very usefull when we have to deal with automation tasks
       - "_device={{ inventory_hostname }}"
 ```
 
-Prometheus itself has a service discovery plugin to be able to get hosts from registered device inside Consul.
+Prometheus itself has a service discovery plugin to be able to get hosts from a registered device inside Consul.
 
 ### Prometheus, Loki and Grafana
 Finally, as a complete Monitoring/Telemetry/Log aggregation stack we have chosen:
@@ -298,10 +298,10 @@ Finally, as a complete Monitoring/Telemetry/Log aggregation stack we have chosen
 
 # How to reproduce the demo environment
 
- There are some requirements to reproduce this demo enviroment:
+ There are some requirements to reproduce this demo environment:
 * python3
 * pip3
-* Python virtualen
+* Python virtualenv
 * Docker
 * Docker Compose
 * Ansible
@@ -341,9 +341,9 @@ At this point, everything is up and running!
 
 ## Rest of the Stack
 
-First clone this repository on your server and chanage directory inside the root.
+First clone this repository on your server and then change directory inside the root.
 
-Then create the virtualenv and install all the python requirements (this action could takes long to finish)
+Then create the virtualenv and install all the python requirements (this action could take long to finish)
 
 ```console
 foo@bar:~$ cd yanq
@@ -353,7 +353,7 @@ foo@bar:~$ source .venv/bin/activate
 (.venv)foo@bar:~$ pip install -r requirements.txt
 ```
 
-Download from Arista portal the latest cEOS images and put it inside the topology folder, with the name _cEOS-Lab.tar.xz_
+Download from the Arista portal the latest cEOS images and put them inside the topology folder, with the name _cEOS-Lab.tar.xz_
 
 ```console
 (.venv)foo@bar:~$ ls -al topology
@@ -367,7 +367,7 @@ drwxrwxr-x 2 ubuntu ubuntu      4096 May  7 15:17 configs
 -rw-rw-r-- 1 ubuntu ubuntu       638 May  7 14:28 topology.yaml
 ```
 
-Now within the virtual environment you can launch Ansible automation that builds all the infrastructure (it will takes approximately 4 minutes)
+Now within the virtual environment, you can launch the Ansible automation that builds all the infrastructure (it will take approximately 4 minutes)
 
 ```console
 (.venv)foo@bar:~$ ansible-playbook build.yml
@@ -421,9 +421,9 @@ You can re-use an example PostgreSQL dump, inside the _nautobot_export_ folder, 
 
 ## Post actions
 
-Create a git repository on Gitea and push the code that is contained insed the _code_ folder.
+Create a git repository on Gitea and push the code that is contained inside the _code_ folder.
 
-Create also another empty git repository, called Arista, that will contain the backup of the devices configurations.
+Create also another empty git repository, called Arista, that will contain the backup of the device's configurations.
 
 Access AWX dashboard and create the following:
  * New **Project** associated with the brand new repo you've just pushed
@@ -450,7 +450,7 @@ You can now launch the Workflow Template and let the magic happen!
 
 # Clean up the demo stack
 
-If you're tired of the playground you can simply clean all up by running an Ansible playbook
+If you're tired of the playground you can simply clean it all up by running an Ansible playbook
 
 ```console
 (.venv)foo@bar:~$ cd yanq/demo_build
